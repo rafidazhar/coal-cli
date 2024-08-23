@@ -20,7 +20,9 @@ mod utils;
 
 use std::{sync::Arc, sync::RwLock};
 use futures::StreamExt;
+use rayon::prelude::*;
 use tokio_tungstenite::connect_async;
+use rayon::prelude::*;
 use tokio_tungstenite::tungstenite::protocol::Message;
 
 use args::*;
@@ -175,7 +177,7 @@ async fn main() {
     let jito_client =
         RpcClient::new("https://mainnet.block-engine.jito.wtf/api/v1/transactions".to_string());
 
-    let tip = Arc::new(RwLock::new(0_u64));
+    let tip = Arc::new(AtomicU64::new(0_u64));
     let tip_clone = Arc::clone(&tip);
 
     if args.jito {
@@ -188,9 +190,8 @@ async fn main() {
                 if let Ok(Message::Text(text)) = message {
                     if let Ok(tips) = serde_json::from_str::<Vec<Tip>>(&text) {
                         for item in tips {
-                            let mut tip = tip_clone.write().unwrap();
-                            *tip =
-                                (item.landed_tips_50th_percentile * (10_f64).powf(9.0)) as u64;
+                            tip_clone.store(
+                                (item.landed_tips_50th_percentile * (10_f64).powf(9.0)) as u64, Ordering::SeqCst);
                         }
                     }
                 }
