@@ -18,9 +18,9 @@ mod stake;
 mod transfer;
 mod utils;
 
-use std::{sync::Arc, sync::RwLock};
+use std::{sync::Arc};
+use std::sync::atomic::{AtomicU64, Ordering};
 use futures::StreamExt;
-use rayon::prelude::*;
 use tokio_tungstenite::connect_async;
 use rayon::prelude::*;
 use tokio_tungstenite::tungstenite::protocol::Message;
@@ -178,7 +178,7 @@ async fn main() {
         RpcClient::new("https://mainnet.block-engine.jito.wtf/api/v1/transactions".to_string());
 
     let tip = Arc::new(AtomicU64::new(0_u64));
-    let tip_clone = Arc::clone(&tip);
+    let tip_clone: Arc<AtomicU64> = Arc::clone(&tip);
 
     if args.jito {
         let url = "ws://bundles-api-rest.jito.wtf/api/v1/bundles/tip_stream";
